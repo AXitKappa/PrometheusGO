@@ -1,0 +1,10 @@
+# Vermeide unnötige Dateien im Image-Build-Kontext
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+*.md
+node_modules
+bin
+vendor
+.prometheus-data

@@ -1,30 +1,36 @@
-# Multi-stage Dockerfile für ein minimales Produktions-Image
-# Verwende hier dieselbe/neuere Go-Version wie in go.mod (z.B. 1.23).
+# Multi-stage Dockerfile für ein minimales, zuverlässiges Produktions-Image
 FROM golang:1.23 AS builder
 
 WORKDIR /src
 
-# Falls go.mod/go.sum vorhanden sind, werden sie zuerst kopiert zum schnelleren Caching
-COPY go.mod go.sum ./
+# Abhängigkeiten zuerst kopieren für Docker-Cache
+COPY go.mod ./
 ENV GOINSECURE="*"
 ENV GOPROXY=direct
+ENV GO111MODULE=on
 RUN git config --global http.sslverify false
-RUN if [ -f go.mod ]; then go mod download; fi
+RUN go mod download || true
 
-# Restlichen Quellcode kopieren und bauen
+# Restlichen Quellcode kopieren und builden
 COPY . .
 
-# Build-Flags
 ENV CGO_ENABLED=0
-RUN go build -ldflags="-s -w" -o /app .
+ENV GOOS=linux
+# Build in /bin damit klar ist, dass Binary an einem eigenen Ort landet
+RUN go build -ldflags="-s -w" -o /bin/my-app .
 
-# Minimales Laufzeit-Image
+# Laufzeit-Image
 FROM alpine:3.18
+# Erstelle non-root User
 RUN addgroup -S app && adduser -S -G app app
 
-COPY --from=builder /app /app
-USER app
-ENV PORT=8080
-EXPOSE 8080
+# Binary an einen standard Ort kopieren
+COPY --from=builder /bin/my-app /usr/local/bin/my-app
+# Sicherstellen, dass das Binary ausführbar und für den app-User zugreifbar ist
+RUN chown app:app /usr/local/bin/my-app && chmod 0755 /usr/local/bin/my-app
 
-ENTRYPOINT ["/app"]
+USER app
+ENV PORT=8081
+EXPOSE 8081
+
+ENTRYPOINT ["/usr/local/bin/my-app"]
