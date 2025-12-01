@@ -1,1 +1,103 @@
-Hallo 
+# PrometheusGO - Produktionsdaten Mock-Service
+
+Ein Monitoring-System für Produktionsdaten mit Go, Prometheus und Grafana in Docker.
+
+## 🚀 Quick Start
+
+```bash
+cd /home/amrit/projects/PrometheusGO
+sudo docker-compose up -d
+sudo docker-compose ps
+```
+
+## 📊 Zugriff
+
+| Service | URL | Login |
+|---------|-----|-------|
+| Go-App Metriken | http://localhost:8081/metrics | - |
+| Go-App API | http://localhost:8081/productionSteps | - |
+| Prometheus | http://localhost:9090 | - |
+| **Grafana** | http://localhost:3000 | admin / Banenenmatche12 |
+
+## 📁 Struktur
+
+```
+├── docker-compose.yml        # All Services
+├── Dockerfile                # Go Build
+├── main.go                   # Mock Service
+├── prometheus/prometheus.yml # Scrape Config
+└── grafana/provisioning/    # Auto Datasource & Dashboard
+```
+
+## ⚙️ Befehle
+
+```bash
+sudo docker-compose up -d         # Starten
+sudo docker-compose down          # Stoppen
+sudo docker-compose restart       # Neustarten
+sudo docker-compose logs -f       # Live-Logs
+sudo docker-compose ps            # Status
+```
+
+## 🔧 Konfiguration
+
+**Grafana Passwort ändern** (`docker-compose.yml`):
+```yaml
+- GF_SECURITY_ADMIN_PASSWORD=neuesPasswort  # Ändern & neu starten
+```
+
+**Prometheus Scrape-Intervall** (`prometheus/prometheus.yml`):
+```yaml
+scrape_interval: 15s  # Standard
+```
+
+**Go-App Port** (`docker-compose.yml` + `Dockerfile`):
+```yaml
+ports: ["8081:8081"]
+environment: - PORT=8081
+```
+
+## 📊 Dashboard
+
+Nach Login in Grafana:
+1. Dashboards → Production Dashboards
+2. "Produktionsdaten Mock" öffnen
+3. Visualisierungen: Pie Chart | Gauge | Timeseries
+
+## 📝 Mock-Daten
+
+Endpoint: `http://localhost:8081/productionSteps`
+
+Metrik: `Produktionsdaten_Mock_Stueckzahl_Produkte` (aktuell: 3)
+
+## 🐛 Häufige Probleme
+
+**Port vergeben?**
+```bash
+sudo lsof -i :3000     # Grafana
+sudo lsof -i :9090     # Prometheus
+sudo lsof -i :8081     # Go-App
+```
+
+**Grafana Login fehlgeschlagen?**
+```bash
+sudo docker-compose restart grafana
+sudo docker-compose logs grafana | tail -20
+```
+
+**Prometheus sieht App nicht?**
+```bash
+curl http://localhost:9090/api/v1/targets | jq '.'
+```
+
+**WSL Docker Permission Denied?**
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+## 📚 Docs
+
+- [Prometheus](https://prometheus.io/docs/)
+- [Grafana](https://grafana.com/docs/)
+- [Docker Compose](https://docs.docker.com/compose/)
