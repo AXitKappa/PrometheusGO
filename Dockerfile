@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile für ein minimales Produktions-Image
-# Annahme: das main package liegt im Repo-Root und kann mit `go build -o /app .` gebaut werden.
-FROM golang:1.20-alpine AS builder
+# Verwende hier dieselbe/neuere Go-Version wie in go.mod (z.B. 1.23).
+FROM golang:1.23 AS builder
 
 WORKDIR /src
 
@@ -11,7 +11,7 @@ RUN if [ -f go.mod ]; then go mod download; fi
 # Restlichen Quellcode kopieren und bauen
 COPY . .
 
-# Build-Flags: statisch(er), Stripping für kleinere Binaries
+# Build-Flags
 ENV CGO_ENABLED=0
 RUN go build -ldflags="-s -w" -o /app .
 
