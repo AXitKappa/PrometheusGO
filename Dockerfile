@@ -6,6 +6,9 @@ WORKDIR /src
 
 # Falls go.mod/go.sum vorhanden sind, werden sie zuerst kopiert zum schnelleren Caching
 COPY go.mod go.sum ./
+ENV GOINSECURE="*"
+ENV GOPROXY=direct
+RUN git config --global http.sslverify false
 RUN if [ -f go.mod ]; then go mod download; fi
 
 # Restlichen Quellcode kopieren und bauen
