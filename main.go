@@ -269,6 +269,16 @@ func postProductionStep(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stepsMutex.Lock()
+
+	// Prüfe ob device_id bereits existiert (verhindere Duplikate)
+	for _, step := range steps {
+		if step.DeviceID == newStep.DeviceID {
+			stepsMutex.Unlock()
+			http.Error(w, fmt.Sprintf("Product with device_id %d already exists", newStep.DeviceID), http.StatusConflict)
+			return
+		}
+	}
+
 	steps = append(steps, newStep)
 	observeHistogramForStep(newStep)
 	updateMetricsLocked()
@@ -292,12 +302,12 @@ func deleteProductionStep(w http.ResponseWriter, r *http.Request) {
 	stepsMutex.Lock()
 	defer stepsMutex.Unlock()
 
+	// Löschen ALLE Produkte mit dieser device_id
 	found := false
-	for i, step := range steps {
-		if step.DeviceID == deviceID {
+	for i := len(steps) - 1; i >= 0; i-- {
+		if steps[i].DeviceID == deviceID {
 			steps = append(steps[:i], steps[i+1:]...)
 			found = true
-			break
 		}
 	}
 
@@ -311,7 +321,7 @@ func deleteProductionStep(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{"message": fmt.Sprintf("Product with device_id %d deleted successfully", deviceID)})
+	json.NewEncoder(w).Encode(map[string]interface{}{"message": fmt.Sprintf("All products with device_id %d deleted successfully", deviceID)})
 }
 
 func getCompletionTimes(w http.ResponseWriter, r *http.Request) {
